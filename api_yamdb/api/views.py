@@ -1,6 +1,7 @@
 """Представления (Views) для управления контентом сервиса YaMDb."""
+from django.db.models import Avg, IntegerField  
+from django.db.models.functions import Cast, Round  
 
-from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.response import Response
