@@ -1,9 +1,9 @@
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from api.validators import get_current_year
-#Анна, вот тут импорт для третьего разраба
-from users.models import User
+
 
 
 class CategoryGenreModel(models.Model):
@@ -81,3 +81,6 @@ class GenreTitle(models.Model):
 
     def __str__(self):
         return f'{self.genre} {self.title}'
+
+
+
