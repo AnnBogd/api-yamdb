@@ -1,4 +1,4 @@
-mport csv
+import csv
 import os
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -32,7 +32,7 @@ class Command(BaseCommand):
                 )
         self.stdout.write(self.style.SUCCESS('Произведения успешно загружены'))
 
-        # 4. Связи Many-to-Many через промежуточную модель GenreTitle из вашего кода
+        # 4. Связи Many-to-Many через промежуточную модель GenreTitle
         with open(os.path.join(csv_dir, 'genre_title.csv'), encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 title = Title.objects.get(id=row['title_id'])
