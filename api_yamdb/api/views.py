@@ -2,12 +2,10 @@
 from django.db.models import Avg, IntegerField  
 from django.db.models.functions import Cast, Round  
 
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.response import Response
 
 from reviews.models import Category, Genre, Title
-from .filters import TitleFilter
 from .permissions import IsAdminOrReadOnly
 from .serializers import (
     CategorySerializer,
@@ -64,17 +62,41 @@ class TitleViewSet(viewsets.ModelViewSet):
     Динамически вычисляет средний рейтинг на основе оценок в отзывах.
     Разделяет логику сериализаторов для безопасного чтения и записи данных.
     """
+    
+    def get_queryset(self):
+        """
+        Вручную фильтрует queryset на основе параметров запроса.
+        Заменяет собой работу django-filter.
+        """
+        # Сначала аннотируем рейтинг и сортируем
+        queryset = Title.objects.annotate(
+            rating=Cast(
+                Round(Avg('reviews__score')), 
+                output_field=IntegerField()
+            )
+        ).order_by('name')
 
-    queryset = Title.objects.annotate(
-        rating=Cast(
-            Round(Avg('reviews__score')), 
-            output_field=IntegerField()
-        )
-    ).order_by('name')
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = TitleFilter
-    http_method_names = ['get', 'post', 'patch', 'delete']
+        # Извлекаем параметры фильтрации из URL-строки
+        category_slug = self.request.query_params.get('category')
+        genre_slug = self.request.query_params.get('genre')
+        year = self.request.query_params.get('year')
+        name = self.request.query_params.get('name')
+
+        # Последовательно применяем фильтры, если они переданы в запросе
+        if category_slug is not None:
+            queryset = queryset.filter(category__slug=category_slug)
+            
+        if genre_slug is not None:
+            queryset = queryset.filter(genre__slug=genre_slug)
+            
+        if year is not None:
+            queryset = queryset.filter(year=year)
+            
+        if name is not None:
+            # Находит частичные совпадения без учета регистра (icontains)
+            queryset = queryset.filter(name__icontains=name)
+
+        return queryset
 
     def get_serializer_class(self):
         """Определяет класс сериализатора в зависимости от действия."""
@@ -87,7 +109,6 @@ class TitleViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
-        
         
         title_with_rating = self.get_queryset().get(pk=title.pk)
         response_serializer = TitleReadSerializer(title_with_rating)
