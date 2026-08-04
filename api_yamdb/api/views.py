@@ -33,7 +33,7 @@ class CategoryViewSet(mixins.CreateModelMixin,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'delete', 'head', 'options']
+    http_method_names = ['get', 'post', 'delete']
 
 
 class GenreViewSet(mixins.CreateModelMixin,
@@ -53,7 +53,7 @@ class GenreViewSet(mixins.CreateModelMixin,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'delete', 'head', 'options']
+    http_method_names = ['get', 'post', 'delete']
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -65,12 +65,15 @@ class TitleViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Title.objects.annotate(
-        rating=Avg('reviews__score')
+        rating=Cast(
+            Round(Avg('reviews__score')), 
+            output_field=IntegerField()
+        )
     ).order_by('name')
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         """Определяет класс сериализатора в зависимости от действия."""
@@ -80,14 +83,12 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Создает произведение и возвращает развернутый JSON с рейтингом."""
-        serializer = self.get_serializer_class()(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
         
-        # Гарантия вывода рейтинга
-        title_with_rating = Title.objects.annotate(
-            rating=Avg('reviews__score')
-        ).get(pk=title.pk)
+        
+        title_with_rating = self.get_queryset().get(pk=title.pk)
         response_serializer = TitleReadSerializer(title_with_rating)
         return Response(
             response_serializer.data, status=status.HTTP_201_CREATED
@@ -95,9 +96,9 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """Частично обновляет произведение и возвращает свежий JSON."""
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.get('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer_class()(
+        serializer = self.get_serializer(
             instance, data=request.data, partial=partial
         )
         serializer.is_valid(raise_exception=True)

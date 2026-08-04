@@ -71,16 +71,24 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     year = serializers.IntegerField(validators=[validate_year])
     category = serializers.SlugRelatedField(
         slug_field='slug',
-        queryset=Category.objects.all()
+        queryset=Category.objects.all(),
+        required=False,      # Поле не обязательно к передаче в JSON
+        allow_null=True      # Разрешаем значение null
     )
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
-        many=True
+        many=True,
+        required=False,      # Поле не обязательно к передаче в JSON
+        allow_empty=True     # Разрешаем передавать пустой список []
     )
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         """Метаданные сериализатора записи произведений."""
 
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+        
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )

@@ -40,11 +40,17 @@ class Title(models.Model):
         "Год создания произведения",
         db_index=True,
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(get_current_year),
+            MinValueValidator(1, message='Год создания не м. б. меньше 1.'),
+            # Передаем функцию get_current_year как лимит
+            MaxValueValidator(
+                get_current_year, 
+                message='Год создания не может быть больше текущего.'
+            ),
         ],
     )
-    description = models.TextField("Описание произведения", null=True, blank=True)
+    description = models.TextField(
+        "Описание произведения", null=True, blank=True
+    )
     genre = models.ManyToManyField(
         Genre,
         through="GenreTitle",
