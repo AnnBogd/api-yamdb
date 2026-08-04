@@ -8,6 +8,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов. (Третий разработчик)"""
 
     author = SlugRelatedField(slug_field='username', read_only=True)
+    score = serializers.IntegerField(min_value=1, max_value=10)
 
     class Meta:
         model = Review

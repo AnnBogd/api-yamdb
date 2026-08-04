@@ -42,6 +42,10 @@ class Review(models.Model):
             )
         ]
 
+    def __str__(self) -> str:
+        """Переопределить строковой представление отзыва."""
+        return f'Отзыв от {self.author} на произведение "{self.title}"'
+
 
 class Comment(models.Model):
     """Модель комментария.(Третий разработчик)"""
@@ -63,3 +67,7 @@ class Comment(models.Model):
 
     class Meta:
         default_related_name = 'comments'
+
+    def __str__(self) -> str:
+        """Переопределить строковой представление комментария."""
+        return f'Комментарий от {self.author} к отзыву "{self.review.author}"'

@@ -14,8 +14,7 @@ api_v1_router_3_dev.register(
     CommentViewSet,
     basename='comments'
 )
-# api/v1/titles/{title_id}/reviews/{review_id}/
-# api/v1/titles/{title_id}/reviews/{review_id}/comments/{comment_id}/
 urlpatterns = [
-    path('v1/', include(api_v1_router_3_dev.urls))
+    path('v1/', include(api_v1_router_3_dev.urls)),
+    path('v1/auth/', include('users.urls'))
 ]
