@@ -1,13 +1,10 @@
 from django.conf import settings
-# from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-# User = get_user_model()
-
 
 class Review(models.Model):
-    """Модель отзыва.(Третий разработчик)"""
+    """Модель отзыва."""
 
     text = models.TextField(verbose_name='Текст отзыва')
     author = models.ForeignKey(
@@ -48,7 +45,7 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    """Модель комментария.(Третий разработчик)"""
+    """Модель комментария."""
 
     text = models.TextField(verbose_name='Текст комментария')
     author = models.ForeignKey(

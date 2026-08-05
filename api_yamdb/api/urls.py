@@ -16,5 +16,4 @@ api_v1_router_3_dev.register(
 )
 urlpatterns = [
     path('v1/', include(api_v1_router_3_dev.urls)),
-    path('v1/auth/', include('users.urls'))
 ]
