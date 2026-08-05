@@ -62,7 +62,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     Динамически вычисляет средний рейтинг на основе оценок в отзывах.
     Разделяет логику сериализаторов для безопасного чтения и записи данных.
     """
-    
+    permission_classes = (IsAdminOrReadOnly,)
+
     def get_queryset(self):
         """
         Вручную фильтрует queryset на основе параметров запроса.
