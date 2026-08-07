@@ -20,12 +20,12 @@ api_v1_router.register('users', UserViewSet, basename='users')
 api_v1_router.register('categories', CategoryViewSet, basename='categories')
 api_v1_router.register('genres', GenreViewSet, basename='genres')
 api_v1_router.register(
-    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments/',
+    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentViewSet,
     basename='comments'
 )
 api_v1_router.register(
-    r'titles/(?P<title_id>\d+)/reviews/',
+    r'titles/(?P<title_id>\d+)/reviews',
     ReviewViewSet,
     basename='reviews'
 )
