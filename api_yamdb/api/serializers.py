@@ -1,18 +1,22 @@
+"""Сериализаторы приложения api."""
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from rest_framework import serializers
+from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueValidator
 
 from api.validators import validate_year
-from reviews.models import Category, Genre, Title
+from reviews.models import Category, Comment, Genre, Review, Title
 
 
 User = get_user_model()
 
 
-def validate_username_not_me(value):
-    """Запрещает использовать служебное имя `me`."""
+def validate_username_not_me(value: str) -> str:
+    """Запретить использовать служебное имя `me`."""
     if value.lower() == 'me':
         raise serializers.ValidationError(
             'Использовать имя "me" в качестве username запрещено.'
@@ -32,7 +36,8 @@ class SignupSerializer(serializers.Serializer):
         ],
     )
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
+        """Проверить входные данные пользователя."""
         username = attrs['username']
         email = attrs['email']
 
@@ -61,7 +66,8 @@ class SignupSerializer(serializers.Serializer):
 
         return attrs
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> AbstractUser:
+        """Создать нового пользователя и установить невалидный пароль."""
         user, created = User.objects.get_or_create(**validated_data)
 
         if created:
@@ -101,7 +107,8 @@ class UserSerializer(serializers.ModelSerializer):
             'role',
         )
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> AbstractUser:
+        """Создать нового пользователя и установить невалидный пароль."""
         user = super().create(validated_data)
         user.set_unusable_password()
         user.save(update_fields=('password',))
@@ -215,3 +222,24 @@ class TitleWriteSerializer(serializers.ModelSerializer):
             'genre',
             'category',
         )
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор для отзывов."""
+
+    author = SlugRelatedField(slug_field='username', read_only=True)
+    score = serializers.IntegerField(min_value=1, max_value=10)
+
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор для комментариев."""
+
+    author = SlugRelatedField(slug_field='username', read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')

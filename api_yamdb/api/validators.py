@@ -1,13 +1,15 @@
+"""Кастомные валидаторы приложения api."""
+
 from datetime import datetime
 from django.core.exceptions import ValidationError
 
 
-def get_current_year():
+def get_current_year() -> int:
     """Возвращает текущий год как число для MaxValueValidator в модели."""
     return datetime.now().year
 
 
-def validate_year(value):
+def validate_year(value) -> int:
     """Год написания произведения <= текущему (для сериализаторов)."""
     current_year = get_current_year()
     if value > current_year:

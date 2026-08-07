@@ -1,3 +1,5 @@
+"""Конфигурации админ-зоны приложения users."""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
@@ -6,7 +8,7 @@ from users.models import User
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    """Настройки отображения кастомной модели в админ-панеле"""
+    """Настройки отображения кастомной модели в админ-панели."""
 
     fieldsets = UserAdmin.fieldsets + (
         ('Дополнительная информация', {'fields': ('bio', 'role')}),

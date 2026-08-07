@@ -1,19 +1,30 @@
+"""Вьюсеты приложения api."""
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db.models import Avg, IntegerField
+from django.db.models import Avg, IntegerField, QuerySet
 from django.db.models.functions import Cast, Round
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.request import Request
+from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
-from api.permissions import IsAdmin, IsAdminOrReadOnly
-from api.serializers import (
+from reviews.models import Category, Genre, Review, Title
+from .permissions import (
+    IsAdmin,
+    IsAdminOrReadOnly,
+    IsAuthorModeratorAdminOrReadOnly
+)
+from .serializers import (
     CategorySerializer,
+    CommentSerializer,
     GenreSerializer,
+    ReviewSerializer,
     SignupSerializer,
     TitleReadSerializer,
     TitleWriteSerializer,
@@ -21,10 +32,23 @@ from api.serializers import (
     UserMeSerializer,
     UserSerializer,
 )
-from reviews.models import Category, Genre, Title
 
 
 User = get_user_model()
+
+
+class BaseViewSet(viewsets.ModelViewSet):
+    """Абстрактный вьюсет для наследования.
+    
+    Определяет дублирующуюся логику.
+    """
+
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
+
+    def _get_title(self) -> Title:
+        """Получить произведение по его id."""
+        return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
 
 
 class SignupView(APIView):
@@ -32,7 +56,8 @@ class SignupView(APIView):
 
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
+        """Проверить данные пользователя и отправить код подтверждения."""
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -55,7 +80,8 @@ class TokenView(APIView):
 
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
+        """Выдать пользователю токен."""
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -104,7 +130,8 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=(permissions.IsAuthenticated,),
         url_path='me',
     )
-    def me(self, request):
+    def me(self, request: Request) -> Response:
+        """Просмотреть или отредактировать профиль текущего пользователя."""
         if request.method == 'PATCH':
             serializer = UserMeSerializer(
                 request.user,
@@ -115,7 +142,6 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.save()
         else:
             serializer = UserMeSerializer(request.user)
-
         return Response(
             serializer.data,
             status=status.HTTP_200_OK,
@@ -136,7 +162,6 @@ class CategoryViewSet(
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'delete']
 
 
 class GenreViewSet(
@@ -153,7 +178,6 @@ class GenreViewSet(
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'delete']
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -161,8 +185,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     permission_classes = (IsAdminOrReadOnly,)
 
-    def get_queryset(self):
-        """Возвращает произведения с фильтрацией и рейтингом."""
+    def get_queryset(self) -> QuerySet:
+        """Вернуть произведения с фильтрацией и рейтингом."""
 
         queryset = Title.objects.annotate(
             rating=Cast(
@@ -196,14 +220,14 @@ class TitleViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Serializer:
         """Выбирает сериализатор в зависимости от действия."""
 
         if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
         return TitleWriteSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args, **kwargs) -> Response:
         """Создаёт произведение и возвращает данные для чтения."""
 
         serializer = self.get_serializer(data=request.data)
@@ -220,7 +244,7 @@ class TitleViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request: Request, *args, **kwargs) -> Response:
         """Обновляет произведение и возвращает свежие данные."""
 
         partial = kwargs.get('partial', False)
@@ -246,3 +270,44 @@ class TitleViewSet(viewsets.ModelViewSet):
             response_serializer.data,
             status=status.HTTP_200_OK,
         )
+
+
+class ReviewViewSet(BaseViewSet):
+    """Вьюсет для отзывов."""
+
+    serializer_class = ReviewSerializer
+
+    def get_queryset(self) -> QuerySet:
+        """Получить отзывы определенного произведения."""
+        title = self._get_title()
+        return title.reviews.all()
+
+    def perform_create(self, serializer: ReviewSerializer) -> None:
+        """Привязать пользователя к отзыву."""
+        title = self._get_title()
+        serializer.save(title=title, author=self.request.user)
+
+
+class CommentViewSet(BaseViewSet):
+    """Вьюсет для комментариев."""
+
+    serializer_class = CommentSerializer
+
+    def _get_review(self) -> Review:
+        """Получить отзыв по его id."""
+        title = self._get_title()
+        return get_object_or_404(
+            Review,
+            pk=self.kwargs.get('review_id'),
+            title=title
+        )
+
+    def get_queryset(self) -> QuerySet:
+        """Получить комментарии определенного отзыва."""
+        review = self._get_review()
+        return review.comments.all()
+
+    def perform_create(self, serializer: CommentSerializer) -> None:
+        """Сохранить автора комментария."""
+        review = self._get_review()
+        serializer.save(author=self.request.user, review=review)

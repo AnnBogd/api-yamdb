@@ -1,3 +1,5 @@
+"""Модели приложения users."""
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -34,14 +36,15 @@ class User(AbstractUser):
         verbose_name_plural = 'Пользователи'
 
     @property
-    def is_admin(self):
+    def is_admin(self) -> bool:
         """Проверяет права администратора с учётом суперпользователя"""
         return self.role == self.ADMIN or self.is_superuser
 
     @property
-    def is_moderator(self):
+    def is_moderator(self) -> bool:
         """Проверяет, назначена ли пользователю роль модератора"""
         return self.role == self.MODERATOR
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Переопределить строковое представление объекта."""
         return self.username

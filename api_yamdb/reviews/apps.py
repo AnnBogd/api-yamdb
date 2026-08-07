@@ -1,3 +1,5 @@
+"""Конфигурации приложения reviews."""
+
 from django.apps import AppConfig
 
 
