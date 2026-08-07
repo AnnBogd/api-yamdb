@@ -185,6 +185,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     permission_classes = (IsAdminOrReadOnly,)
 
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    
     def get_queryset(self) -> QuerySet:
         """Вернуть произведения с фильтрацией и рейтингом."""
 
@@ -210,8 +212,15 @@ class TitleViewSet(viewsets.ModelViewSet):
                 genre__slug=genre_slug
             )
 
+        # БЕЗОПАСНАЯ ФИЛЬТРАЦИЯ ГОДА:
         if year is not None:
-            queryset = queryset.filter(year=year)
+            # Проверяем, состоит ли строка только из цифр
+            if year.isdigit():
+                queryset = queryset.filter(year=int(year))
+            else:
+                # Если пришла строка {{adminTitleYear}} или любой текст — 
+                # мы просто игнорируем этот фильтр (не ломаем сервер ошибкой 500)
+                pass
 
         if name is not None:
             queryset = queryset.filter(

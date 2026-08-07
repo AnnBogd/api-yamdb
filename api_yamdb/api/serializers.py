@@ -128,12 +128,10 @@ class CategorySerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(
         max_length=50,
         validators=[
-            RegexValidator(
-                regex=r'^[-a-zA-Z0-9_]+$',
-                message=(
-                    'Слаг может содержать только латиницу, '
-                    'цифры, дефис и подчеркивание.'
-                ),
+            # Этот валидатор спасёт от UNIQUE constraint failed
+            UniqueValidator(
+                queryset=Category.objects.all(),
+                message='Категория с таким slug уже существует.'
             )
         ],
     )
@@ -151,12 +149,10 @@ class GenreSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(
         max_length=50,
         validators=[
-            RegexValidator(
-                regex=r'^[-a-zA-Z0-9_]+$',
-                message=(
-                    'Слаг может содержать только латиницу, '
-                    'цифры, дефис и подчеркивание.'
-                ),
+            # Проверяем уникальность слага по таблице жанров
+            UniqueValidator(
+                queryset=Genre.objects.all(),
+                message='Жанр с таким slug уже существует.'
             )
         ],
     )
