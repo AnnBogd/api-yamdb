@@ -5,9 +5,10 @@ class IsAdmin(BasePermission):
     """Разрешает доступ только администратору или суперпользователю."""
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and getattr(request.user, 'is_admin', False)
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.is_admin
         )
 
 
@@ -17,9 +18,10 @@ class IsAdminOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True
-        return (
-            request.user.is_authenticated
-            and getattr(request.user, 'is_admin', False)
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.is_admin
         )
 
 
@@ -34,8 +36,10 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
+        if not request.user.is_authenticated:
+            return False
         return (
             obj.author == request.user
-            or getattr(request.user, 'is_moderator', False)
-            or getattr(request.user, 'is_admin', False)
+            or request.user.is_moderator
+            or request.user.is_admin
         )
