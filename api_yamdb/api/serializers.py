@@ -6,7 +6,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueValidator
+from rest_framework.validators import ValidationError, UniqueValidator
 
 from api.validators import validate_year
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -233,6 +233,21 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
+
+    def validate(self, data: dict) -> dict:
+        """Проверить, что нельзя повторно оставить отзыв на произведение."""
+        request = self.context.get('request')
+        title_id = self.context['view'].kwargs.get('title_id')
+        if request and request.method == 'POST':
+            if (
+                Review
+                .objects
+                .filter(title__id=title_id, author=request.user)
+                .exists()
+            ):
+                raise ValidationError(
+                    'Вы уже оставили отзыв на это произведение.')
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
