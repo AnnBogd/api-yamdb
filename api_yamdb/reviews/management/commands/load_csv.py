@@ -94,11 +94,13 @@ class Command(BaseCommand):
                 author = User.objects.get(id=row['author'])
                 Review.objects.get_or_create(
                     id=row['id'],
-                    title=title,
-                    text=row['text'],
-                    author=author,
-                    score=row['score'],
-                    pub_date=row['pub_date']
+                    defaults={
+                        'text': row['text'],
+                        'author': author,  # или как у вас определен автор/пользователь
+                        'score': row['score'],
+                        'pub_date': row['pub_date'],
+                        'title': title,    # объект произведения, к которому относится отзыв
+                    }
                 )
         self._reset_sequences(Review)
         self.stdout.write(self.style.SUCCESS('Отзывы успешно загружены'))
@@ -108,12 +110,15 @@ class Command(BaseCommand):
             for row in csv.DictReader(f):
                 review = Review.objects.get(id=row['review_id'])
                 author = User.objects.get(id=row['author'])
+                # ИСПРАВЛЕНО: ищем СТРОГО по id, остальное передаем в defaults
                 Comment.objects.get_or_create(
                     id=row['id'],
-                    review=review,
-                    text=row['text'],
-                    author=author,
-                    pub_date=row['pub_date']
+                    defaults={
+                        'review': review,
+                        'text': row['text'],
+                        'author': author,
+                        'pub_date': row['pub_date']
+                    }
                 )
         self._reset_sequences(Comment)
         self.stdout.write(self.style.SUCCESS('Комментарии успешно загружены'))

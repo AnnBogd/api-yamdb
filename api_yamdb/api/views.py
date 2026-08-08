@@ -185,6 +185,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     permission_classes = (IsAdminOrReadOnly,)
 
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    
     def get_queryset(self) -> QuerySet:
         """Вернуть произведения с фильтрацией и рейтингом."""
 
@@ -211,7 +213,10 @@ class TitleViewSet(viewsets.ModelViewSet):
             )
 
         if year is not None:
-            queryset = queryset.filter(year=year)
+            if year.isdigit():
+                queryset = queryset.filter(year=int(year))
+            else:
+                pass
 
         if name is not None:
             queryset = queryset.filter(
@@ -229,24 +234,19 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def create(self, request: Request, *args, **kwargs) -> Response:
         """Создаёт произведение и возвращает данные для чтения."""
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
-
         title_with_rating = self.get_queryset().get(pk=title.pk)
-        response_serializer = TitleReadSerializer(
-            title_with_rating
-        )
-
+        response_serializer = TitleReadSerializer(title_with_rating)
         return Response(
             response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
+
     def update(self, request: Request, *args, **kwargs) -> Response:
         """Обновляет произведение и возвращает свежие данные."""
-
         partial = kwargs.get('partial', False)
         instance = self.get_object()
 
@@ -257,15 +257,8 @@ class TitleViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
-
-        title_with_rating = Title.objects.annotate(
-            rating=Avg('reviews__score')
-        ).get(pk=title.pk)
-
-        response_serializer = TitleReadSerializer(
-            title_with_rating
-        )
-
+        title_with_rating = self.get_queryset().get(pk=title.pk)
+        response_serializer = TitleReadSerializer(title_with_rating)
         return Response(
             response_serializer.data,
             status=status.HTTP_200_OK,
