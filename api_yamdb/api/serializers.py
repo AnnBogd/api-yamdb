@@ -169,7 +169,8 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.IntegerField(read_only=True)
+    rating = serializers.IntegerField(read_only=True, allow_null=True)
+    #rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         """Метаданные сериализатора чтения произведений."""
@@ -186,28 +187,32 @@ class TitleReadSerializer(serializers.ModelSerializer):
         )
 
 
+
+
 class TitleWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и изменения произведений."""
 
     year = serializers.IntegerField(validators=[validate_year])
+    
+    # Категория должна быть обязательной (без allow_null), чтобы ловить опечатки типа "categoty"
     category = serializers.SlugRelatedField(
         slug_field='slug',
-        queryset=Category.objects.all(),
-        required=False,
-        allow_null=True,
+        queryset=Category.objects.all()
     )
+    
+    # Для жанров ОБЯЗАТЕЛЬНО возвращаем allow_empty=True, 
+    # чтобы можно было создавать произведения без жанров
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
         many=True,
-        required=False,
-        allow_empty=True,
+        allow_empty=True
     )
-    rating = serializers.IntegerField(read_only=True)
+    
+    rating = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         """Метаданные сериализатора записи произведений."""
-
         model = Title
         fields = (
             'id',
@@ -219,6 +224,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
             'category',
         )
 
+    def to_representation(self, instance):
+        """При выводе данных использует структуру сериализатора чтения."""
+        return TitleReadSerializer(instance).data
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов."""

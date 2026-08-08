@@ -238,24 +238,29 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def create(self, request: Request, *args, **kwargs) -> Response:
         """Создаёт произведение и возвращает данные для чтения."""
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
 
-        title_with_rating = self.get_queryset().get(pk=title.pk)
-        response_serializer = TitleReadSerializer(
-            title_with_rating
-        )
+        
+        # Корректно подтягиваем созданный объект с его жанрами
+        title_with_rating = Title.objects.annotate(
+            rating=Cast(
+                Round(Avg('reviews__score')),
+                output_field=IntegerField(),
+            )
+        ).get(pk=title.pk)
 
+        
+        response_serializer = TitleReadSerializer(title_with_rating)
         return Response(
             response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
+
     def update(self, request: Request, *args, **kwargs) -> Response:
         """Обновляет произведение и возвращает свежие данные."""
-
         partial = kwargs.get('partial', False)
         instance = self.get_object()
 
@@ -267,18 +272,20 @@ class TitleViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         title = serializer.save()
 
+        # Применяем Cast и Round для консистентности округления рейтинга
         title_with_rating = Title.objects.annotate(
-            rating=Avg('reviews__score')
+            rating=Cast(
+                Round(Avg('reviews__score')),
+                output_field=IntegerField(),
+            )
         ).get(pk=title.pk)
 
-        response_serializer = TitleReadSerializer(
-            title_with_rating
-        )
-
+        response_serializer = TitleReadSerializer(title_with_rating)
         return Response(
             response_serializer.data,
             status=status.HTTP_200_OK,
         )
+
 
 
 class ReviewViewSet(BaseViewSet):

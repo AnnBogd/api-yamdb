@@ -114,7 +114,10 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+#EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
 DEFAULT_FROM_EMAIL = 'noreply@yamdb.local'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
