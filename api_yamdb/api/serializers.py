@@ -3,7 +3,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import ValidationError, UniqueValidator
@@ -47,9 +46,7 @@ class SignupSerializer(serializers.Serializer):
         user_by_email = User.objects.filter(
             email=email
         ).first()
-
         errors = {}
-
         if user_by_username and user_by_username.email != email:
             errors['username'] = (
                 'Пользователь с таким username уже существует.'
@@ -62,13 +59,11 @@ class SignupSerializer(serializers.Serializer):
 
         if errors:
             raise serializers.ValidationError(errors)
-
         return attrs
 
     def create(self, validated_data: dict) -> AbstractUser:
         """Создать нового пользователя и установить невалидный пароль."""
         user, created = User.objects.get_or_create(**validated_data)
-
         if created:
             user.set_unusable_password()
             user.save(update_fields=('password',))
@@ -127,7 +122,6 @@ class CategorySerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(
         max_length=50,
         validators=[
-            # Этот валидатор спасёт от UNIQUE constraint failed
             UniqueValidator(
                 queryset=Category.objects.all(),
                 message='Категория с таким slug уже существует.'
@@ -137,7 +131,6 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         """Метаданные сериализатора категорий."""
-
         model = Category
         fields = ('name', 'slug')
 
@@ -148,7 +141,6 @@ class GenreSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(
         max_length=50,
         validators=[
-            # Проверяем уникальность слага по таблице жанров
             UniqueValidator(
                 queryset=Genre.objects.all(),
                 message='Жанр с таким slug уже существует.'
@@ -158,7 +150,6 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         """Метаданные сериализатора жанров."""
-
         model = Genre
         fields = ('name', 'slug')
 
@@ -222,12 +213,18 @@ class TitleWriteSerializer(serializers.ModelSerializer):
             'category',
         )
 
-    def validate_genre(self, value):
+    def validate_genre(self, value: list) -> list:
+        """Проверить, что список жанров не пустой."""
         if not value:
-            raise serializers.ValidationError("Список жанров не может быть пустым.")
+            raise serializers.ValidationError(
+                "Список жанров не может быть пустым.")
         return value
 
-    def to_representation(self, instance):
+    def to_representation(
+            self,
+            instance: serializers.Serializer
+    ) -> serializers.Serializer:
+        """Выбрать сериализатор для вывода данных."""
         return TitleReadSerializer(instance, context=self.context).data
 
 

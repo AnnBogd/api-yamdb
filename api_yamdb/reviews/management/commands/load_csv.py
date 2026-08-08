@@ -21,7 +21,6 @@ class Command(BaseCommand):
         """Сбрасывает и обновляет счетчики ID в базе данных после импорта."""
         table_name = model._meta.db_table
         with connection.cursor() as cursor:
-            # Универсальный скрипт для SQLite, фиксирующий счетчик автоинкремента
             cursor.execute(
                 f"UPDATE sqlite_sequence SET seq = "
                 f"(SELECT MAX(id) FROM {table_name}) "
@@ -31,8 +30,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Логика последовательного чтения и сохранения данных из CSV."""
         csv_dir = os.path.join(settings.BASE_DIR, 'static', 'data')
-
-        # 1. Импорт пользователей
         with open(os.path.join(csv_dir, 'users.csv'), encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 User.objects.get_or_create(
@@ -46,17 +43,16 @@ class Command(BaseCommand):
                 )
         self._reset_sequences(User)
         self.stdout.write(self.style.SUCCESS('Пользователи успешно загружены'))
-
-        # 2. Категории
-        with open(os.path.join(csv_dir, 'category.csv'), encoding='utf-8') as f:
+        with open(
+            os.path.join(csv_dir, 'category.csv'),
+            encoding='utf-8'
+        ) as f:
             for row in csv.DictReader(f):
                 Category.objects.get_or_create(
                     id=row['id'], name=row['name'], slug=row['slug']
                 )
         self._reset_sequences(Category)
         self.stdout.write(self.style.SUCCESS('Категории успешно загружены'))
-
-        # 3. Жанры
         with open(os.path.join(csv_dir, 'genre.csv'), encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 Genre.objects.get_or_create(
@@ -64,8 +60,6 @@ class Command(BaseCommand):
                 )
         self._reset_sequences(Genre)
         self.stdout.write(self.style.SUCCESS('Жанры успешно загружены'))
-
-        # 4. Произведения
         with open(os.path.join(csv_dir, 'titles.csv'), encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 category = Category.objects.get(id=row['category'])
@@ -77,17 +71,17 @@ class Command(BaseCommand):
                 )
         self._reset_sequences(Title)
         self.stdout.write(self.style.SUCCESS('Произведения успешно загружены'))
-
-        # 5. Связи Many-to-Many через промежуточную модель GenreTitle
-        with open(os.path.join(csv_dir, 'genre_title.csv'), encoding='utf-8') as f:
+        with open(
+            os.path.join(csv_dir, 'genre_title.csv'),
+            encoding='utf-8'
+        ) as f:
             for row in csv.DictReader(f):
                 title = Title.objects.get(id=row['title_id'])
                 genre = Genre.objects.get(id=row['genre_id'])
                 GenreTitle.objects.get_or_create(title=title, genre=genre)
         self._reset_sequences(GenreTitle)
-        self.stdout.write(self.style.SUCCESS('Связи жанров и произведений загружены'))
-
-        # 6. Отзывы
+        self.stdout.write(
+            self.style.SUCCESS('Связи жанров и произведений загружены'))
         with open(os.path.join(csv_dir, 'review.csv'), encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 title = Title.objects.get(id=row['title_id'])
@@ -96,21 +90,21 @@ class Command(BaseCommand):
                     id=row['id'],
                     defaults={
                         'text': row['text'],
-                        'author': author,  # или как у вас определен автор/пользователь
+                        'author': author,
                         'score': row['score'],
                         'pub_date': row['pub_date'],
-                        'title': title,    # объект произведения, к которому относится отзыв
+                        'title': title,
                     }
                 )
         self._reset_sequences(Review)
         self.stdout.write(self.style.SUCCESS('Отзывы успешно загружены'))
-
-        # 7. Комментарии
-        with open(os.path.join(csv_dir, 'comments.csv'), encoding='utf-8') as f:
+        with open(
+            os.path.join(csv_dir, 'comments.csv'),
+            encoding='utf-8'
+        ) as f:
             for row in csv.DictReader(f):
                 review = Review.objects.get(id=row['review_id'])
                 author = User.objects.get(id=row['author'])
-                # ИСПРАВЛЕНО: ищем СТРОГО по id, остальное передаем в defaults
                 Comment.objects.get_or_create(
                     id=row['id'],
                     defaults={

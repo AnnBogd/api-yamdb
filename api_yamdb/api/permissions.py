@@ -46,7 +46,7 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
             request: Request,
             view: ViewSet,
             obj: Model
-        ) -> bool:
+    ) -> bool:
         """Определить доступ на уровне объекта."""
         if request.method in SAFE_METHODS:
             return True

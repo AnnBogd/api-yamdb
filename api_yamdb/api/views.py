@@ -39,7 +39,7 @@ User = get_user_model()
 
 class BaseViewSet(viewsets.ModelViewSet):
     """Абстрактный вьюсет для наследования.
-    
+
     Определяет дублирующуюся логику.
     """
 
@@ -186,7 +186,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
     http_method_names = ('get', 'post', 'patch', 'delete')
-    
+
     def get_queryset(self) -> QuerySet:
         """Вернуть произведения с фильтрацией и рейтингом."""
 
@@ -243,7 +243,6 @@ class TitleViewSet(viewsets.ModelViewSet):
             response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
-
 
     def update(self, request: Request, *args, **kwargs) -> Response:
         """Обновляет произведение и возвращает свежие данные."""

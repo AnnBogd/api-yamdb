@@ -48,7 +48,7 @@ class Title(models.Model):
         validators=[
             MinValueValidator(1, message='Год создания не м. б. меньше 1.'),
             MaxValueValidator(
-                get_current_year, 
+                get_current_year,
                 message='Год создания не может быть больше текущего.'
             ),
         ],
@@ -132,6 +132,7 @@ class Review(models.Model):
 
     class Meta:
         default_related_name = 'reviews'
+        ordering = ('pub_date',)
         constraints = [
             models.UniqueConstraint(
                 fields=('title', 'author'),
@@ -164,6 +165,7 @@ class Comment(models.Model):
 
     class Meta:
         default_related_name = 'comments'
+        ordering = ('pub_date',)
 
     def __str__(self) -> str:
         """Переопределить строковой представление комментария."""
