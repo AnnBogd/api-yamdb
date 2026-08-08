@@ -48,21 +48,20 @@ class SignupSerializer(serializers.Serializer):
             email=email
         ).first()
 
+        errors = {}
+
         if user_by_username and user_by_username.email != email:
-            raise serializers.ValidationError(
-                {
-                    'username':
-                    'Пользователь с таким username уже существует.'
-                }
+            errors['username'] = (
+                'Пользователь с таким username уже существует.'
             )
 
         if user_by_email and user_by_email.username != username:
-            raise serializers.ValidationError(
-                {
-                    'email':
-                    'Пользователь с таким email уже существует.'
-                }
+            errors['email'] = (
+                'Пользователь с таким email уже существует.'
             )
+
+        if errors:
+            raise serializers.ValidationError(errors)
 
         return attrs
 
@@ -170,6 +169,8 @@ class TitleReadSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
     rating = serializers.IntegerField(read_only=True)
+    # Принудительно возвращаем пустую строку вместо null
+    description = serializers.CharField(default="", allow_blank=True)
 
     class Meta:
         """Метаданные сериализатора чтения произведений."""
@@ -193,17 +194,18 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all(),
-        required=False,
-        allow_null=True,
+        required=True,
+        allow_null=False,
     )
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
         many=True,
-        required=False,
-        allow_empty=True,
+        required=True,
     )
     rating = serializers.IntegerField(read_only=True)
+    # Также добавляем сюда, чтобы при POST/PATCH ответе не вылетало null
+    description = serializers.CharField(default="", allow_blank=True, required=False)
 
     class Meta:
         """Метаданные сериализатора записи произведений."""
@@ -218,6 +220,15 @@ class TitleWriteSerializer(serializers.ModelSerializer):
             'genre',
             'category',
         )
+
+    # Валидация на случай, если передан пустой список [] для genre
+    def validate_genre(self, value):
+        if not value:
+            raise serializers.ValidationError("Список жанров не может быть пустым.")
+        return value
+
+    def to_representation(self, instance):
+        return TitleReadSerializer(instance, context=self.context).data
 
 
 class ReviewSerializer(serializers.ModelSerializer):
