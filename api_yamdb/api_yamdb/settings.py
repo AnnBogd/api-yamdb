@@ -1,5 +1,4 @@
 from pathlib import Path
-from datetime import timedelta
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,7 +17,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_simplejwt',
     'reviews.apps.ReviewsConfig',
     'users.apps.UsersConfig',
     'api.apps.ApiConfig',
@@ -120,7 +118,3 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@yamdb.local'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),     # Время жизни access-токена
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),        # Время жизни refresh-токена
-}

@@ -168,9 +168,8 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.IntegerField(read_only=True)
-    # Принудительно возвращаем пустую строку вместо null
     description = serializers.CharField(default="", allow_blank=True)
+    rating = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         """Метаданные сериализатора чтения произведений."""
@@ -203,13 +202,15 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         many=True,
         required=True,
     )
-    rating = serializers.IntegerField(read_only=True)
-    # Также добавляем сюда, чтобы при POST/PATCH ответе не вылетало null
-    description = serializers.CharField(default="", allow_blank=True, required=False)
+    description = serializers.CharField(
+        default="",
+        allow_blank=True,
+        required=False
+    )
+    rating = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         """Метаданные сериализатора записи произведений."""
-
         model = Title
         fields = (
             'id',
@@ -221,7 +222,6 @@ class TitleWriteSerializer(serializers.ModelSerializer):
             'category',
         )
 
-    # Валидация на случай, если передан пустой список [] для genre
     def validate_genre(self, value):
         if not value:
             raise serializers.ValidationError("Список жанров не может быть пустым.")
