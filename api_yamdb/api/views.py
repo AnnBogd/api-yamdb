@@ -37,20 +37,6 @@ from .serializers import (
 User = get_user_model()
 
 
-class BaseViewSet(viewsets.ModelViewSet):
-    """Абстрактный вьюсет для наследования.
-
-    Определяет дублирующуюся логику.
-    """
-
-    http_method_names = ('get', 'post', 'patch', 'delete')
-    permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
-
-    def _get_title(self) -> Title:
-        """Получить произведение по его id."""
-        return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-
-
 class SignupView(APIView):
     """Регистрирует пользователя и отправляет код подтверждения."""
 
@@ -264,15 +250,21 @@ class TitleViewSet(viewsets.ModelViewSet):
         )
 
 
-class ReviewViewSet(BaseViewSet):
+class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для отзывов."""
 
     serializer_class = ReviewSerializer
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
+
+    def _get_title(self) -> Title: 
+        """Получить произведение по его id.""" 
+        return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
 
     def get_queryset(self) -> QuerySet:
         """Получить отзывы определенного произведения."""
         title = self._get_title()
-        return title.reviews.all()
+        return title.reviews.select_related('author')
 
     def perform_create(self, serializer: ReviewSerializer) -> None:
         """Привязать пользователя к отзыву."""
@@ -280,24 +272,25 @@ class ReviewViewSet(BaseViewSet):
         serializer.save(title=title, author=self.request.user)
 
 
-class CommentViewSet(BaseViewSet):
+class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для комментариев."""
 
     serializer_class = CommentSerializer
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
 
     def _get_review(self) -> Review:
         """Получить отзыв по его id."""
-        title = self._get_title()
         return get_object_or_404(
             Review,
             pk=self.kwargs.get('review_id'),
-            title=title
+            title_id=self.kwargs.get('title_id')
         )
 
     def get_queryset(self) -> QuerySet:
         """Получить комментарии определенного отзыва."""
         review = self._get_review()
-        return review.comments.all()
+        return review.comments.select_related('author')
 
     def perform_create(self, serializer: CommentSerializer) -> None:
         """Сохранить автора комментария."""

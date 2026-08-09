@@ -232,7 +232,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов."""
 
     author = SlugRelatedField(slug_field='username', read_only=True)
-    score = serializers.IntegerField(min_value=1, max_value=10)
 
     class Meta:
         model = Review
@@ -246,7 +245,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             if (
                 Review
                 .objects
-                .filter(title__id=title_id, author=request.user)
+                .filter(title_id=title_id, author=request.user)
                 .exists()
             ):
                 raise ValidationError(

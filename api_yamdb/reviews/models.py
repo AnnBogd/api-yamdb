@@ -7,6 +7,10 @@ from django.db import models
 from api.validators import get_current_year
 
 
+MIN_REVIEW_SCORE = 1
+MAX_REVIEW_SCORE = 10
+
+
 class CategoryGenreModel(models.Model):
     """Абстрактная модель для Категорий и Жанров."""
 
@@ -116,8 +120,14 @@ class Review(models.Model):
     score = models.IntegerField(
         verbose_name='Оценка произведения',
         validators=[
-            MinValueValidator(1, 'Оценка не может быть меньше 1'),
-            MaxValueValidator(10, 'Оценка не может быть больше 10'),
+            MinValueValidator(
+                MIN_REVIEW_SCORE,
+                'Оценка не может быть меньше 1'
+            ),
+            MaxValueValidator(
+                MAX_REVIEW_SCORE,
+                'Оценка не может быть больше 10'
+            ),
         ],
     )
     pub_date = models.DateTimeField(
