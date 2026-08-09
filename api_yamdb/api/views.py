@@ -15,6 +15,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title
+from .serializers import CategorySerializer, GenreSerializer
+
+#2.rev Фильтрация по ревью
+from django_filters.rest_framework import DjangoFilterBackend
+from api.filters import TitleFilter
+
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
@@ -147,37 +153,38 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+# 2/rev Создан по замечанию ревьюера
+class BaseCategoryGenreViewSet(viewsets.GenericViewSet):
+    """Базовый вьюсет с общими конфигурационными настройками."""
+
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name",)
+    lookup_field = "slug"
+
 
 class CategoryViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
-    """Вьюсет для работы с категориями произведений."""
-
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
-
-
+    BaseCategoryGenreViewSet,  # 2.rev: Наследует общие настройки
+): 
+    """Вьюсет для работы с категориями произведений.""" 
+ 
+    queryset = Category.objects.all() 
+    serializer_class = CategorySerializer 
+ 
+ 
 class GenreViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
-    """Вьюсет для работы с жанрами произведений."""
-
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
+    BaseCategoryGenreViewSet,  # 2.rev: Наследует общие настройки
+): 
+    """Вьюсет для работы с жанрами произведений.""" 
+ 
+    queryset = Genre.objects.all() 
+    serializer_class = GenreSerializer 
 
 
 class TitleViewSet(viewsets.ModelViewSet):

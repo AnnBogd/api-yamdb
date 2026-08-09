@@ -4,17 +4,24 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from api.validators import get_current_year
+# ИСПРАВЛЕНО: Импортируем актуальный кастомный валидатор года
+from .validators import validate_year
+
+# 2.rev Величины ограничений вынесены в константы
+MAX_NAME_LENGTH = 256
 
 
-class CategoryGenreModel(models.Model):
-    """Абстрактная модель для Категорий и Жанров."""
+class Category(models.Model):
+    """Модель категорий."""
 
-    name = models.CharField("Название", max_length=256)
-    slug = models.SlugField("Слаг", max_length=50, unique=True)
+    # 2.rev Поля перенесены напрямую (абстрактный класс удален)
+    name = models.CharField("Название", max_length=MAX_NAME_LENGTH)
+    # ИСПРАВЛЕНО: Удален избыточный max_length=50
+    slug = models.SlugField("Слаг", unique=True)
 
     class Meta:
-        abstract = True
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории"
         ordering = ("name",)
 
     def __str__(self) -> str:
@@ -22,35 +29,35 @@ class CategoryGenreModel(models.Model):
         return self.name
 
 
-class Category(CategoryGenreModel):
-    """Модель категорий."""
-
-    class Meta(CategoryGenreModel.Meta):
-        verbose_name = "Категория"
-        verbose_name_plural = "Категории"
-
-
-class Genre(CategoryGenreModel):
+class Genre(models.Model):
     """Модель жанров."""
 
-    class Meta(CategoryGenreModel.Meta):
+    # 2.rev Поля перенесены напрямую (абстрактный класс удален)
+    name = models.CharField("Название", max_length=MAX_NAME_LENGTH)
+    # ИСПРАВЛЕНО: Удален избыточный max_length=50
+    slug = models.SlugField("Слаг", unique=True)
+
+    class Meta:
         verbose_name = "Жанр"
         verbose_name_plural = "Жанры"
+        ordering = ("name",)
+
+    def __str__(self) -> str:
+        """Переопределить строковое представление объекта."""
+        return self.name
 
 
 class Title(models.Model):
     """Модель произведений."""
 
-    name = models.CharField("Название произведения", max_length=256)
-    year = models.PositiveSmallIntegerField(
+    name = models.CharField("Название произведения", max_length=MAX_NAME_LENGTH)
+    # 2.rev SmallIntegerField для поддержки дат до нашей эры
+    year = models.SmallIntegerField(
         "Год создания произведения",
         db_index=True,
         validators=[
-            MinValueValidator(1, message='Год создания не м. б. меньше 1.'),
-            MaxValueValidator(
-                get_current_year,
-                message='Год создания не может быть больше текущего.'
-            ),
+            # 2.rev MinValueValidator удален, оставлен кастомный валидатор
+            validate_year,
         ],
     )
     description = models.TextField(
