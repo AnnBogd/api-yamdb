@@ -17,9 +17,11 @@ from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Genre, Review, Title
 from .serializers import CategorySerializer, GenreSerializer
 
+
 #2.rev Фильтрация по ревью
 from django_filters.rest_framework import DjangoFilterBackend
-from api.filters import TitleFilter
+from api.filters import TitleFilter  # Импортируем кастомный фильтр
+
 
 from .permissions import (
     IsAdmin,
@@ -187,88 +189,33 @@ class GenreViewSet(
     serializer_class = GenreSerializer 
 
 
-class TitleViewSet(viewsets.ModelViewSet):
-    """Вьюсет для управления произведениями."""
+class TitleViewSet(viewsets.ModelViewSet): 
+    """Вьюсет для управления произведениями.""" 
+ 
+    # 2.rev Запрос перенесен в атрибут класса. Убрана ручная фильтрация.
+    queryset = Title.objects.annotate( 
+        rating=Cast( 
+            Round(Avg('reviews__score')), 
+            output_field=IntegerField(), 
+        ) 
+    ).order_by('name') 
+    
+    permission_classes = (IsAdminOrReadOnly,) 
+    http_method_names = ('get', 'post', 'patch', 'delete') 
+    filter_backends = (DjangoFilterBackend,)
+    
+    # 2.rev: Подключение кастомного класса фильтрации
+    filterset_class = TitleFilter
+ 
+    def get_serializer_class(self): 
+        """Выбирает сериализатор в зависимости от действия.""" 
+        if self.action in ('list', 'retrieve'): 
+            return TitleReadSerializer 
+        return TitleWriteSerializer 
+        
+    # 2.rev: Методы create() и update() полностью удалены.
+    # Чистый DRF автоматически использует to_representation сериализатора.
 
-    permission_classes = (IsAdminOrReadOnly,)
-
-    http_method_names = ('get', 'post', 'patch', 'delete')
-
-    def get_queryset(self) -> QuerySet:
-        """Вернуть произведения с фильтрацией и рейтингом."""
-
-        queryset = Title.objects.annotate(
-            rating=Cast(
-                Round(Avg('reviews__score')),
-                output_field=IntegerField(),
-            )
-        ).order_by('name')
-
-        category_slug = self.request.query_params.get('category')
-        genre_slug = self.request.query_params.get('genre')
-        year = self.request.query_params.get('year')
-        name = self.request.query_params.get('name')
-
-        if category_slug is not None:
-            queryset = queryset.filter(
-                category__slug=category_slug
-            )
-
-        if genre_slug is not None:
-            queryset = queryset.filter(
-                genre__slug=genre_slug
-            )
-
-        if year is not None:
-            if year.isdigit():
-                queryset = queryset.filter(year=int(year))
-            else:
-                pass
-
-        if name is not None:
-            queryset = queryset.filter(
-                name__icontains=name
-            )
-
-        return queryset
-
-    def get_serializer_class(self) -> Serializer:
-        """Выбирает сериализатор в зависимости от действия."""
-
-        if self.action in ('list', 'retrieve'):
-            return TitleReadSerializer
-        return TitleWriteSerializer
-
-    def create(self, request: Request, *args, **kwargs) -> Response:
-        """Создаёт произведение и возвращает данные для чтения."""
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        title = serializer.save()
-        title_with_rating = self.get_queryset().get(pk=title.pk)
-        response_serializer = TitleReadSerializer(title_with_rating)
-        return Response(
-            response_serializer.data,
-            status=status.HTTP_201_CREATED,
-        )
-
-    def update(self, request: Request, *args, **kwargs) -> Response:
-        """Обновляет произведение и возвращает свежие данные."""
-        partial = kwargs.get('partial', False)
-        instance = self.get_object()
-
-        serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=partial,
-        )
-        serializer.is_valid(raise_exception=True)
-        title = serializer.save()
-        title_with_rating = self.get_queryset().get(pk=title.pk)
-        response_serializer = TitleReadSerializer(title_with_rating)
-        return Response(
-            response_serializer.data,
-            status=status.HTTP_200_OK,
-        )
 
 
 class ReviewViewSet(BaseViewSet):

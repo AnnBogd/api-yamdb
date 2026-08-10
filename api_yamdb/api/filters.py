@@ -1,7 +1,7 @@
 import django_filters
 from reviews.models import Title
 
-
+#2.rev файл создан по замечанию ревьюера
 class TitleFilter(django_filters.FilterSet):
     """Кастомный фильтр для произведений."""
 

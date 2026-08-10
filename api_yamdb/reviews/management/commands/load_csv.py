@@ -71,6 +71,7 @@ class Command(BaseCommand):
                 )
         self._reset_sequences(Title)
         self.stdout.write(self.style.SUCCESS('Произведения успешно загружены'))
+
         with open(
             os.path.join(csv_dir, 'genre_title.csv'),
             encoding='utf-8'
@@ -78,10 +79,19 @@ class Command(BaseCommand):
             for row in csv.DictReader(f):
                 title = Title.objects.get(id=row['title_id'])
                 genre = Genre.objects.get(id=row['genre_id'])
-                GenreTitle.objects.get_or_create(title=title, genre=genre)
+                # ОБЯЗАТЕЛЬНО: Передаем id из CSV, а связи прячем в defaults
+                GenreTitle.objects.get_or_create(
+                    id=row['id'],
+                    defaults={
+                        'title': title,
+                        'genre': genre
+                    }
+                )
+        # Теперь сброс последовательностей абсолютно безопасен
         self._reset_sequences(GenreTitle)
         self.stdout.write(
-            self.style.SUCCESS('Связи жанров и произведений загружены'))
+            self.style.SUCCESS('Связи жанров и произведений загружены')
+        )
         with open(os.path.join(csv_dir, 'review.csv'), encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 title = Title.objects.get(id=row['title_id'])

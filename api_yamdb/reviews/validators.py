@@ -1,5 +1,5 @@
 """Кастомные валидаторы приложения reviews"""
-
+#2.rev Перенесен файл в revews по замечанию ревьюера
 from datetime import datetime
 from django.core.exceptions import ValidationError
 
