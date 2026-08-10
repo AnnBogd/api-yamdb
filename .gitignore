@@ -153,3 +153,4 @@ db.sqlite3
 __pycache__/
 *.pyc
 /sent_emails/
+api-yamdb/api_yamdb/api/__pycache__/
