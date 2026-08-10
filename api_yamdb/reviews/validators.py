@@ -1,16 +1,18 @@
 """Кастомные валидаторы приложения reviews"""
-#2.rev Перенесен файл в revews по замечанию ревьюера
+
 from datetime import datetime
+
 from django.core.exceptions import ValidationError
 
 
-YEAR_ERROR_MESSAGE = "Год написания произведения не может быть больше текущего."
+YEAR_ERROR_MESSAGE = ("Год написания произведения не может быть больше "
+                      "текущего.")
 
 
 def validate_year(value: int) -> None:
-    """Проверяет, что год написания произведения не больше текущего."""
+    """Проверить, что год написания произведения не больше текущего."""
     current_year = datetime.now().year
-    
+
     if value > current_year:
         raise ValidationError(
             YEAR_ERROR_MESSAGE,

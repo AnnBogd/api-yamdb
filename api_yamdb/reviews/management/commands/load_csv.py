@@ -18,7 +18,7 @@ class Command(BaseCommand):
     help = 'Импорт данных из CSV файлов в базу данных'
 
     def _reset_sequences(self, model):
-        """Сбрасывает и обновляет счетчики ID в базе данных после импорта."""
+        """Сбросить и обновить счетчики ID в базе данных после импорта."""
         table_name = model._meta.db_table
         with connection.cursor() as cursor:
             cursor.execute(
@@ -79,7 +79,6 @@ class Command(BaseCommand):
             for row in csv.DictReader(f):
                 title = Title.objects.get(id=row['title_id'])
                 genre = Genre.objects.get(id=row['genre_id'])
-                # ОБЯЗАТЕЛЬНО: Передаем id из CSV, а связи прячем в defaults
                 GenreTitle.objects.get_or_create(
                     id=row['id'],
                     defaults={
@@ -87,7 +86,6 @@ class Command(BaseCommand):
                         'genre': genre
                     }
                 )
-        # Теперь сброс последовательностей абсолютно безопасен
         self._reset_sequences(GenreTitle)
         self.stdout.write(
             self.style.SUCCESS('Связи жанров и произведений загружены')

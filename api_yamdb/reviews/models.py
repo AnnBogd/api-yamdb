@@ -4,25 +4,18 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-# ИСПРАВЛЕНО: Импортируем актуальный кастомный валидатор года
 from .validators import validate_year
 
-# 2.rev Величины ограничений вынесены в константы
-MAX_NAME_LENGTH = 256
 
+MAX_NAME_LENGTH = 256
 MIN_REVIEW_SCORE = 1
 MAX_REVIEW_SCORE = 10
 
 
-class CategoryGenreModel(models.Model):
-    """Абстрактная модель для Категорий и Жанров."""
-
 class Category(models.Model):
     """Модель категорий."""
 
-    # 2.rev Поля перенесены напрямую (абстрактный класс удален)
     name = models.CharField("Название", max_length=MAX_NAME_LENGTH)
-    # ИСПРАВЛЕНО: Удален избыточный max_length=50
     slug = models.SlugField("Слаг", unique=True)
 
     class Meta:
@@ -38,9 +31,7 @@ class Category(models.Model):
 class Genre(models.Model):
     """Модель жанров."""
 
-    # 2.rev Поля перенесены напрямую (абстрактный класс удален)
     name = models.CharField("Название", max_length=MAX_NAME_LENGTH)
-    # ИСПРАВЛЕНО: Удален избыточный max_length=50
     slug = models.SlugField("Слаг", unique=True)
 
     class Meta:
@@ -56,13 +47,12 @@ class Genre(models.Model):
 class Title(models.Model):
     """Модель произведений."""
 
-    name = models.CharField("Название произведения", max_length=MAX_NAME_LENGTH)
-    # 2.rev SmallIntegerField для поддержки дат до нашей эры
+    name = models.CharField(
+        "Название произведения", max_length=MAX_NAME_LENGTH)
     year = models.SmallIntegerField(
         "Год создания произведения",
         db_index=True,
         validators=[
-            # 2.rev MinValueValidator удален, оставлен кастомный валидатор
             validate_year,
         ],
     )

@@ -6,23 +6,23 @@ from django.core.mail import send_mail
 from django.db.models import Avg, IntegerField, QuerySet
 from django.db.models.functions import Cast, Round
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, permissions, status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import (
+    filters,
+    mixins,
+    permissions,
+    serializers,
+    status,
+    viewsets
+)
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.request import Request
-from rest_framework.serializers import Serializer
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
+from api.filters import TitleFilter
 from reviews.models import Category, Genre, Review, Title
-from .serializers import CategorySerializer, GenreSerializer
-
-
-#2.rev Фильтрация по ревью
-from django_filters.rest_framework import DjangoFilterBackend
-from api.filters import TitleFilter  # Импортируем кастомный фильтр
-
-
 from .permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
@@ -43,6 +43,15 @@ from .serializers import (
 
 
 User = get_user_model()
+
+
+class BaseCategoryGenreViewSet(viewsets.GenericViewSet):
+    """Базовый вьюсет с общими конфигурационными настройками."""
+
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("name",)
+    lookup_field = "slug"
 
 
 class SignupView(APIView):
@@ -141,67 +150,50 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-# 2/rev Создан по замечанию ревьюера
-class BaseCategoryGenreViewSet(viewsets.GenericViewSet):
-    """Базовый вьюсет с общими конфигурационными настройками."""
-
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
-    lookup_field = "slug"
-
 
 class CategoryViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.DestroyModelMixin,
-    BaseCategoryGenreViewSet,  # 2.rev: Наследует общие настройки
-): 
-    """Вьюсет для работы с категориями произведений.""" 
- 
-    queryset = Category.objects.all() 
-    serializer_class = CategorySerializer 
- 
- 
+    BaseCategoryGenreViewSet,
+):
+    """Вьюсет для работы с категориями произведений."""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
 class GenreViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.DestroyModelMixin,
-    BaseCategoryGenreViewSet,  # 2.rev: Наследует общие настройки
-): 
-    """Вьюсет для работы с жанрами произведений.""" 
- 
-    queryset = Genre.objects.all() 
-    serializer_class = GenreSerializer 
+    BaseCategoryGenreViewSet,
+):
+    """Вьюсет для работы с жанрами произведений."""
+
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
 
 
-class TitleViewSet(viewsets.ModelViewSet): 
-    """Вьюсет для управления произведениями.""" 
- 
-    # 2.rev Запрос перенесен в атрибут класса. Убрана ручная фильтрация.
-    queryset = Title.objects.annotate( 
-        rating=Cast( 
-            Round(Avg('reviews__score')), 
-            output_field=IntegerField(), 
-        ) 
-    ).order_by('name') 
-    
-    permission_classes = (IsAdminOrReadOnly,) 
-    http_method_names = ('get', 'post', 'patch', 'delete') 
+class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для управления произведениями."""
+
+    queryset = Title.objects.annotate(
+        rating=Cast(
+            Round(Avg('reviews__score')),
+            output_field=IntegerField(),
+        )
+    ).order_by('name')
+    permission_classes = (IsAdminOrReadOnly,)
+    http_method_names = ('get', 'post', 'patch', 'delete')
     filter_backends = (DjangoFilterBackend,)
-    
-    # 2.rev: Подключение кастомного класса фильтрации
     filterset_class = TitleFilter
- 
-    def get_serializer_class(self): 
-        """Выбирает сериализатор в зависимости от действия.""" 
-        if self.action in ('list', 'retrieve'): 
-            return TitleReadSerializer 
-        return TitleWriteSerializer 
-        
-    # 2.rev: Методы create() и update() полностью удалены.
-    # Чистый DRF автоматически использует to_representation сериализатора.
 
+    def get_serializer_class(self) -> serializers.Serializer:
+        """Выбрать сериализатор в зависимости от действия."""
+        if self.action in ('list', 'retrieve'):
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -211,8 +203,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthorModeratorAdminOrReadOnly,)
 
-    def _get_title(self) -> Title: 
-        """Получить произведение по его id.""" 
+    def _get_title(self) -> Title:
+        """Получить произведение по его id."""
         return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
 
     def get_queryset(self) -> QuerySet:

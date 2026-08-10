@@ -3,7 +3,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import ValidationError, UniqueValidator
+from rest_framework.validators import ValidationError
 
 
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -85,35 +85,28 @@ class UserMeSerializer(UserSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для моделей Категорий контента."""
 
-    # 2.rev Явное поле slug удалено, так как ModelSerializer
-    # автоматически подтягивает настройки и валидацию уникальности из модели.
-
     class Meta:
         """Метаданные сериализатора категорий."""
+
         model = Category
         fields = ('name', 'slug')
- 
- 
-class GenreSerializer(serializers.ModelSerializer): 
-    """Сериализатор для моделей Жанров произведений."""
 
-    # 2.rev Явное поле slug удалено по аналогичной причине (избыточность)
+
+class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для моделей Жанров произведений."""
 
     class Meta:
         """Метаданные сериализатора жанров."""
+
         model = Genre
-        fields = ('name', 'slug') 
+        fields = ('name', 'slug')
+
 
 class TitleReadSerializer(serializers.ModelSerializer):
     """Сериализатор для безопасного чтения произведений (GET)."""
 
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
-
-    # 2.rev Удалено явное переопределение поля description.
-    # Настройки (включая валидацию) автоматически подтянутся из модели.
-
-    # 2.rev: Вместо allow_null добавлен параметр default=None
     rating = serializers.IntegerField(read_only=True, default=None)
 
     class Meta:
@@ -131,42 +124,32 @@ class TitleReadSerializer(serializers.ModelSerializer):
         )
 
 
-class TitleWriteSerializer(serializers.ModelSerializer): 
-    """Сериализатор для создания и изменения произведений.""" 
- 
-    # ИСПРАВЛЕНО: Поле year удалено, так как валидация подтянется из модели.
-    
-    category = serializers.SlugRelatedField( 
-        slug_field='slug', 
-        queryset=Category.objects.all(), 
-        # Аргументы required=True и allow_null=False являются дефолтными 
-        # для ForeignKey-полей модели, их можно опустить.
-    ) 
-    genre = serializers.SlugRelatedField( 
-        slug_field='slug', 
-        queryset=Genre.objects.all(), 
-        many=True, 
-        # ИСПРАВЛЕНО: Запрет пустого списка через атрибут вместо метода validate_genre
-        allow_empty=False, 
-    ) 
-    
-    # 2.rev Поле description удалено, настройки подтянутся из модели.
-    # 2.rev Поле rating удалено (оно описывается только в сериализаторе представления).
- 
-    class Meta: 
-        """Метаданные сериализатора записи произведений.""" 
-        model = Title 
-        # 2.rev Из списка полей удален 'rating'
-        fields = ( 
-            'id', 
-            'name', 
-            'year', 
-            'description', 
-            'genre', 
-            'category', 
-        ) 
- 
-    # 2.rev: Метод validate_genre удален за ненадобностью.
+class TitleWriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания и изменения произведений."""
+
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+    )
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True,
+        allow_empty=False,
+    )
+
+    class Meta:
+        """Метаданные сериализатора записи произведений."""
+
+        model = Title
+        fields = (
+            'id',
+            'name',
+            'year',
+            'description',
+            'genre',
+            'category',
+        )
 
     def to_representation(
             self,
