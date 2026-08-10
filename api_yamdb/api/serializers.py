@@ -1,38 +1,26 @@
 """Сериализаторы приложения api."""
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.contrib.auth.models import AbstractUser
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import ValidationError, UniqueValidator
 
 
 from reviews.models import Category, Comment, Genre, Review, Title
+from users.constants import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
+from users.validators import username_validator, validate_username
 
 
 User = get_user_model()
 
 
-def validate_username_not_me(value: str) -> str:
-    """Запретить использовать служебное имя `me`."""
-    if value.lower() == 'me':
-        raise serializers.ValidationError(
-            'Использовать имя "me" в качестве username запрещено.'
-        )
-    return value
-
-
 class SignupSerializer(serializers.Serializer):
     """Проверяет данные самостоятельной регистрации."""
 
-    email = serializers.EmailField(max_length=254)
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
     username = serializers.CharField(
-        max_length=150,
-        validators=[
-            UnicodeUsernameValidator(),
-            validate_username_not_me,
-        ],
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(username_validator, validate_username),
     )
 
     def validate(self, attrs: dict) -> dict:
@@ -61,34 +49,19 @@ class SignupSerializer(serializers.Serializer):
             raise serializers.ValidationError(errors)
         return attrs
 
-    def create(self, validated_data: dict) -> AbstractUser:
-        """Создать нового пользователя и установить невалидный пароль."""
-        user, created = User.objects.get_or_create(**validated_data)
-        if created:
-            user.set_unusable_password()
-            user.save(update_fields=('password',))
-
-        return user
-
 
 class TokenSerializer(serializers.Serializer):
     """Проверяет данные для получения JWT-токена."""
 
-    username = serializers.CharField(max_length=150)
+    username = serializers.CharField(
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(username_validator, validate_username),
+    )
     confirmation_code = serializers.CharField(write_only=True)
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Управление пользователями для администратора."""
-
-    username = serializers.CharField(
-        max_length=150,
-        validators=[
-            UnicodeUsernameValidator(),
-            validate_username_not_me,
-            UniqueValidator(queryset=User.objects.all()),
-        ],
-    )
 
     class Meta:
         model = User
@@ -100,13 +73,6 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
-
-    def create(self, validated_data: dict) -> AbstractUser:
-        """Создать нового пользователя и установить невалидный пароль."""
-        user = super().create(validated_data)
-        user.set_unusable_password()
-        user.save(update_fields=('password',))
-        return user
 
 
 class UserMeSerializer(UserSerializer):
