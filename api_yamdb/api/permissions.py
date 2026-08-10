@@ -23,12 +23,8 @@ class IsAdminOrReadOnly(BasePermission):
 
     def has_permission(self, request: Request, view: ViewSet) -> bool:
         """Определить доступ на уровне запроса."""
-        if request.method in SAFE_METHODS:
-            return True
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.is_admin
+        return request.method in SAFE_METHODS or (
+            request.user.is_authenticated and request.user.is_admin
         )
 
 
@@ -37,9 +33,7 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
 
     def has_permission(self, request: Request, view: ViewSet) -> bool:
         """Определить доступ на уровне запроса."""
-        if request.method in SAFE_METHODS:
-            return True
-        return request.user.is_authenticated
+        return request.method in SAFE_METHODS or request.user.is_authenticated
 
     def has_object_permission(
             self,
@@ -48,12 +42,11 @@ class IsAuthorModeratorAdminOrReadOnly(BasePermission):
             obj: Model
     ) -> bool:
         """Определить доступ на уровне объекта."""
-        if request.method in SAFE_METHODS:
-            return True
-        if not request.user.is_authenticated:
-            return False
-        return (
-            obj.author == request.user
-            or request.user.is_moderator
-            or request.user.is_admin
+        return request.method in SAFE_METHODS or (
+            request.user.is_authenticated
+            and (
+                request.user.is_moderator
+                or request.user.is_admin
+                or obj.author == request.user
+            )
         )

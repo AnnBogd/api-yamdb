@@ -1,38 +1,26 @@
 """Сериализаторы приложения api."""
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.contrib.auth.models import AbstractUser
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import ValidationError, UniqueValidator
 
-from api.validators import validate_year
+
 from reviews.models import Category, Comment, Genre, Review, Title
+from users.constants import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
+from users.validators import username_validator, validate_username
 
 
 User = get_user_model()
 
 
-def validate_username_not_me(value: str) -> str:
-    """Запретить использовать служебное имя `me`."""
-    if value.lower() == 'me':
-        raise serializers.ValidationError(
-            'Использовать имя "me" в качестве username запрещено.'
-        )
-    return value
-
-
 class SignupSerializer(serializers.Serializer):
     """Проверяет данные самостоятельной регистрации."""
 
-    email = serializers.EmailField(max_length=254)
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
     username = serializers.CharField(
-        max_length=150,
-        validators=[
-            UnicodeUsernameValidator(),
-            validate_username_not_me,
-        ],
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(username_validator, validate_username),
     )
 
     def validate(self, attrs: dict) -> dict:
@@ -61,34 +49,19 @@ class SignupSerializer(serializers.Serializer):
             raise serializers.ValidationError(errors)
         return attrs
 
-    def create(self, validated_data: dict) -> AbstractUser:
-        """Создать нового пользователя и установить невалидный пароль."""
-        user, created = User.objects.get_or_create(**validated_data)
-        if created:
-            user.set_unusable_password()
-            user.save(update_fields=('password',))
-
-        return user
-
 
 class TokenSerializer(serializers.Serializer):
     """Проверяет данные для получения JWT-токена."""
 
-    username = serializers.CharField(max_length=150)
+    username = serializers.CharField(
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(username_validator, validate_username),
+    )
     confirmation_code = serializers.CharField(write_only=True)
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Управление пользователями для администратора."""
-
-    username = serializers.CharField(
-        max_length=150,
-        validators=[
-            UnicodeUsernameValidator(),
-            validate_username_not_me,
-            UniqueValidator(queryset=User.objects.all()),
-        ],
-    )
 
     class Meta:
         model = User
@@ -101,13 +74,6 @@ class UserSerializer(serializers.ModelSerializer):
             'role',
         )
 
-    def create(self, validated_data: dict) -> AbstractUser:
-        """Создать нового пользователя и установить невалидный пароль."""
-        user = super().create(validated_data)
-        user.set_unusable_password()
-        user.save(update_fields=('password',))
-        return user
-
 
 class UserMeSerializer(UserSerializer):
     """Профиль текущего пользователя."""
@@ -119,48 +85,36 @@ class UserMeSerializer(UserSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для моделей Категорий контента."""
 
-    slug = serializers.SlugField(
-        max_length=50,
-        validators=[
-            UniqueValidator(
-                queryset=Category.objects.all(),
-                message='Категория с таким slug уже существует.'
-            )
-        ],
-    )
+    # 2.rev Явное поле slug удалено, так как ModelSerializer
+    # автоматически подтягивает настройки и валидацию уникальности из модели.
 
     class Meta:
         """Метаданные сериализатора категорий."""
         model = Category
         fields = ('name', 'slug')
-
-
-class GenreSerializer(serializers.ModelSerializer):
+ 
+ 
+class GenreSerializer(serializers.ModelSerializer): 
     """Сериализатор для моделей Жанров произведений."""
 
-    slug = serializers.SlugField(
-        max_length=50,
-        validators=[
-            UniqueValidator(
-                queryset=Genre.objects.all(),
-                message='Жанр с таким slug уже существует.'
-            )
-        ],
-    )
+    # 2.rev Явное поле slug удалено по аналогичной причине (избыточность)
 
     class Meta:
         """Метаданные сериализатора жанров."""
         model = Genre
-        fields = ('name', 'slug')
-
+        fields = ('name', 'slug') 
 
 class TitleReadSerializer(serializers.ModelSerializer):
     """Сериализатор для безопасного чтения произведений (GET)."""
 
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
-    description = serializers.CharField(default="", allow_blank=True)
-    rating = serializers.IntegerField(read_only=True, allow_null=True)
+
+    # 2.rev Удалено явное переопределение поля description.
+    # Настройки (включая валидацию) автоматически подтянутся из модели.
+
+    # 2.rev: Вместо allow_null добавлен параметр default=None
+    rating = serializers.IntegerField(read_only=True, default=None)
 
     class Meta:
         """Метаданные сериализатора чтения произведений."""
@@ -177,48 +131,42 @@ class TitleReadSerializer(serializers.ModelSerializer):
         )
 
 
-class TitleWriteSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания и изменения произведений."""
-
-    year = serializers.IntegerField(validators=[validate_year])
-    category = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Category.objects.all(),
-        required=True,
-        allow_null=False,
-    )
-    genre = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Genre.objects.all(),
-        many=True,
-        required=True,
-    )
-    description = serializers.CharField(
-        default="",
-        allow_blank=True,
-        required=False
-    )
-    rating = serializers.IntegerField(read_only=True, allow_null=True)
-
-    class Meta:
-        """Метаданные сериализатора записи произведений."""
-        model = Title
-        fields = (
-            'id',
-            'name',
-            'year',
-            'rating',
-            'description',
-            'genre',
-            'category',
-        )
-
-    def validate_genre(self, value: list) -> list:
-        """Проверить, что список жанров не пустой."""
-        if not value:
-            raise serializers.ValidationError(
-                "Список жанров не может быть пустым.")
-        return value
+class TitleWriteSerializer(serializers.ModelSerializer): 
+    """Сериализатор для создания и изменения произведений.""" 
+ 
+    # ИСПРАВЛЕНО: Поле year удалено, так как валидация подтянется из модели.
+    
+    category = serializers.SlugRelatedField( 
+        slug_field='slug', 
+        queryset=Category.objects.all(), 
+        # Аргументы required=True и allow_null=False являются дефолтными 
+        # для ForeignKey-полей модели, их можно опустить.
+    ) 
+    genre = serializers.SlugRelatedField( 
+        slug_field='slug', 
+        queryset=Genre.objects.all(), 
+        many=True, 
+        # ИСПРАВЛЕНО: Запрет пустого списка через атрибут вместо метода validate_genre
+        allow_empty=False, 
+    ) 
+    
+    # 2.rev Поле description удалено, настройки подтянутся из модели.
+    # 2.rev Поле rating удалено (оно описывается только в сериализаторе представления).
+ 
+    class Meta: 
+        """Метаданные сериализатора записи произведений.""" 
+        model = Title 
+        # 2.rev Из списка полей удален 'rating'
+        fields = ( 
+            'id', 
+            'name', 
+            'year', 
+            'description', 
+            'genre', 
+            'category', 
+        ) 
+ 
+    # 2.rev: Метод validate_genre удален за ненадобностью.
 
     def to_representation(
             self,
