@@ -50,8 +50,8 @@ class BaseCategoryGenreViewSet(viewsets.GenericViewSet):
 
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
-    lookup_field = "slug"
+    search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class SignupView(APIView):

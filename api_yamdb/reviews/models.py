@@ -15,13 +15,13 @@ MAX_REVIEW_SCORE = 10
 class Category(models.Model):
     """Модель категорий."""
 
-    name = models.CharField("Название", max_length=MAX_NAME_LENGTH)
-    slug = models.SlugField("Слаг", unique=True)
+    name = models.CharField('Название', max_length=MAX_NAME_LENGTH)
+    slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
-        verbose_name = "Категория"
-        verbose_name_plural = "Категории"
-        ordering = ("name",)
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        ordering = ('name',)
 
     def __str__(self) -> str:
         """Переопределить строковое представление объекта."""
@@ -31,13 +31,13 @@ class Category(models.Model):
 class Genre(models.Model):
     """Модель жанров."""
 
-    name = models.CharField("Название", max_length=MAX_NAME_LENGTH)
-    slug = models.SlugField("Слаг", unique=True)
+    name = models.CharField('Название', max_length=MAX_NAME_LENGTH)
+    slug = models.SlugField('Слаг', unique=True)
 
     class Meta:
-        verbose_name = "Жанр"
-        verbose_name_plural = "Жанры"
-        ordering = ("name",)
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+        ordering = ('name',)
 
     def __str__(self) -> str:
         """Переопределить строковое представление объекта."""
@@ -48,37 +48,37 @@ class Title(models.Model):
     """Модель произведений."""
 
     name = models.CharField(
-        "Название произведения", max_length=MAX_NAME_LENGTH)
+        'Название произведения', max_length=MAX_NAME_LENGTH)
     year = models.SmallIntegerField(
-        "Год создания произведения",
+        'Год создания произведения',
         db_index=True,
         validators=[
             validate_year,
         ],
     )
     description = models.TextField(
-        "Описание произведения", default="", blank=True
+        'Описание произведения', default="", blank=True
     )
     genre = models.ManyToManyField(
         Genre,
-        through="GenreTitle",
-        verbose_name="Жанр произведения",
+        through='GenreTitle',
+        verbose_name='Жанр произведения',
         blank=True,
-        related_name="titles",
+        related_name='titles',
     )
     category = models.ForeignKey(
         Category,
-        verbose_name="Категория произведения",
+        verbose_name='Категория произведения',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="titles",
+        related_name='titles',
     )
 
     class Meta:
-        verbose_name = "Произведение"
-        verbose_name_plural = "Произведения"
-        ordering = ("name",)
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+        ordering = ('name',)
 
     def __str__(self) -> str:
         """Переопределить строковое представление объекта."""
@@ -90,18 +90,18 @@ class GenreTitle(models.Model):
 
     genre = models.ForeignKey(
         Genre,
-        verbose_name="Жанр",
+        verbose_name='Жанр',
         on_delete=models.CASCADE
     )
     title = models.ForeignKey(
         'Title',
-        verbose_name="Произведениe",
+        verbose_name='Произведениe',
         on_delete=models.CASCADE
     )
 
     class Meta:
-        verbose_name = "Связь жанра и произведения"
-        verbose_name_plural = "Связи жанров и произведений"
+        verbose_name = 'Связь жанра и произведения'
+        verbose_name_plural = 'Связи жанров и произведений'
 
     def __str__(self):
         return f'{self.genre} {self.title}'
@@ -121,11 +121,11 @@ class Review(models.Model):
         validators=[
             MinValueValidator(
                 MIN_REVIEW_SCORE,
-                'Оценка не может быть меньше 1'
+                f'Оценка не может быть меньше {MIN_REVIEW_SCORE}'
             ),
             MaxValueValidator(
                 MAX_REVIEW_SCORE,
-                'Оценка не может быть больше 10'
+                f'Оценка не может быть больше {MAX_REVIEW_SCORE}'
             ),
         ],
     )

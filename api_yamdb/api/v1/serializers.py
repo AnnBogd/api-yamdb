@@ -5,7 +5,6 @@ from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import ValidationError
 
-
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.constants import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
 from users.validators import username_validator, validate_username
