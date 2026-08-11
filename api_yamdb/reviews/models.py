@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .validators import validate_year
+from .validators import validate_year_not_in_future
 
 
 MAX_NAME_LENGTH = 256
@@ -53,7 +53,7 @@ class Title(models.Model):
         "Год создания произведения",
         db_index=True,
         validators=[
-            validate_year,
+            validate_year_not_in_future,
         ],
     )
     description = models.TextField(
@@ -61,7 +61,6 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genre,
-        through="GenreTitle",
         verbose_name="Жанр произведения",
         blank=True,
         related_name="titles",
