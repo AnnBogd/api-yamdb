@@ -41,17 +41,11 @@ from .serializers import (
     UserSerializer,
 )
 
+from .viewsets import CreateListDestroyViewSet
+
 
 User = get_user_model()
 
-
-class BaseCategoryGenreViewSet(viewsets.GenericViewSet):
-    """Базовый вьюсет с общими конфигурационными настройками."""
-
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
-    lookup_field = "slug"
 
 
 class SignupView(APIView):
@@ -151,27 +145,18 @@ class UserViewSet(viewsets.ModelViewSet):
         )
 
 
-class CategoryViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    BaseCategoryGenreViewSet,
-):
+
+class CategoryViewSet(CreateListDestroyViewSet):
     """Вьюсет для работы с категориями произведений."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    BaseCategoryGenreViewSet,
-):
+class GenreViewSet(CreateListDestroyViewSet): 
     """Вьюсет для работы с жанрами произведений."""
 
-    queryset = Genre.objects.all()
+    queryset = Genre.objects.all() 
     serializer_class = GenreSerializer
 
 

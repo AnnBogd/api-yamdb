@@ -9,7 +9,7 @@ YEAR_ERROR_MESSAGE = ("Год написания произведения не �
                       "текущего.")
 
 
-def validate_year(value: int) -> None:
+def validate_year_not_in_future(value: int) -> None:
     """Проверить, что год написания произведения не больше текущего."""
     current_year = datetime.now().year
 
