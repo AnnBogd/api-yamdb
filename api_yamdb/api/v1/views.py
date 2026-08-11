@@ -47,7 +47,6 @@ from .viewsets import CreateListDestroyViewSet
 User = get_user_model()
 
 
-
 class SignupView(APIView):
     """Регистрирует пользователя и отправляет код подтверждения."""
 
