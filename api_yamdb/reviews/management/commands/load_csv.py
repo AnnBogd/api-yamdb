@@ -7,7 +7,9 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import connection
+
 from reviews.models import Category, Comment, Genre, GenreTitle, Review, Title
+
 
 User = get_user_model()
 
@@ -22,9 +24,9 @@ class Command(BaseCommand):
         table_name = model._meta.db_table
         with connection.cursor() as cursor:
             cursor.execute(
-                f"UPDATE sqlite_sequence SET seq = "
-                f"(SELECT MAX(id) FROM {table_name}) "
-                f"WHERE name = '{table_name}';"
+                f'UPDATE sqlite_sequence SET seq = '
+                f'(SELECT MAX(id) FROM {table_name}) '
+                f'WHERE name = "{table_name}";'
             )
 
     def handle(self, *args, **options):

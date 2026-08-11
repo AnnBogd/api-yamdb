@@ -57,13 +57,12 @@ class Title(models.Model):
         ],
     )
     description = models.TextField(
-        'Описание произведения', default="", blank=True
+        'Описание произведения', default='', blank=True
     )
     genre = models.ManyToManyField(
         Genre,
         verbose_name='Жанр произведения',
         blank=True,
-        related_name='titles',
     )
     category = models.ForeignKey(
         Category,
@@ -71,13 +70,13 @@ class Title(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='titles',
     )
 
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
         ordering = ('name',)
+        default_related_name = 'titles'
 
     def __str__(self) -> str:
         """Переопределить строковое представление объекта."""
@@ -103,6 +102,7 @@ class GenreTitle(models.Model):
         verbose_name_plural = 'Связи жанров и произведений'
 
     def __str__(self):
+        """Переопределить строковое представление объекта."""
         return f'{self.genre} {self.title}'
 
 
@@ -133,7 +133,7 @@ class Review(models.Model):
         verbose_name='Дата публикации отзыва',
     )
     title = models.ForeignKey(
-        'Title',
+        Title,
         on_delete=models.CASCADE,
         verbose_name='Произведение',
     )

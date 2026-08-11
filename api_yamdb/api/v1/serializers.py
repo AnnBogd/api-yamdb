@@ -1,4 +1,4 @@
-"""Сериализаторы приложения api."""
+"""Сериализаторы первой версии приложения api."""
 
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -11,6 +11,7 @@ from users.validators import (
     validate_username_characters,
     validate_username_not_forbidden,
 )
+
 
 User = get_user_model()
 

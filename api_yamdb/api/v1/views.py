@@ -1,4 +1,4 @@
-"""Вьюсеты приложения api."""
+"""Вьюсеты первой версии приложения api."""
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -9,7 +9,6 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
     filters,
-    mixins,
     permissions,
     serializers,
     status,
@@ -40,7 +39,6 @@ from .serializers import (
     UserMeSerializer,
     UserSerializer,
 )
-
 from .viewsets import CreateListDestroyViewSet
 
 
@@ -144,7 +142,6 @@ class UserViewSet(viewsets.ModelViewSet):
         )
 
 
-
 class CategoryViewSet(CreateListDestroyViewSet):
     """Вьюсет для работы с категориями произведений."""
 
@@ -152,10 +149,10 @@ class CategoryViewSet(CreateListDestroyViewSet):
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(CreateListDestroyViewSet): 
+class GenreViewSet(CreateListDestroyViewSet):
     """Вьюсет для работы с жанрами произведений."""
 
-    queryset = Genre.objects.all() 
+    queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 

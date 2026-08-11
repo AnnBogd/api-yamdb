@@ -1,4 +1,4 @@
-"""URLS первой версии api."""
+"""URLS первой версии приложения api."""
 
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter

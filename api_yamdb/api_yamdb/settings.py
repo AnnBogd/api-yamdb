@@ -120,3 +120,5 @@ EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 DEFAULT_FROM_EMAIL = 'noreply@yamdb.local'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+FORBIDDEN_USERNAMES = ('me',)
