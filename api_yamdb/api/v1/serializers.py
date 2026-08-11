@@ -8,8 +8,10 @@ from rest_framework.validators import ValidationError
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.constants import EMAIL_MAX_LENGTH, USERNAME_MAX_LENGTH
-from users.validators import username_validator, validate_username
-
+from users.validators import (
+    validate_username_characters,
+    validate_username_not_forbidden,
+)
 
 User = get_user_model()
 
@@ -20,7 +22,10 @@ class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
     username = serializers.CharField(
         max_length=USERNAME_MAX_LENGTH,
-        validators=(username_validator, validate_username),
+        validators=(
+            validate_username_characters,
+            validate_username_not_forbidden,
+        ),
     )
 
     def validate(self, attrs: dict) -> dict:
@@ -55,7 +60,10 @@ class TokenSerializer(serializers.Serializer):
 
     username = serializers.CharField(
         max_length=USERNAME_MAX_LENGTH,
-        validators=(username_validator, validate_username),
+        validators=(
+            validate_username_characters,
+            validate_username_not_forbidden,
+        ),
     )
     confirmation_code = serializers.CharField(write_only=True)
 

@@ -6,10 +6,10 @@ from django.core.exceptions import ValidationError
 from .constants import FORBIDDEN_USERNAMES
 
 
-username_validator = UnicodeUsernameValidator()
+validate_username_characters = UnicodeUsernameValidator()
 
 
-def validate_username(value: str) -> None:
+def validate_username_not_forbidden(value: str) -> None:
     """Запретить использование служебных имён пользователей."""
     if value.lower() in FORBIDDEN_USERNAMES:
         raise ValidationError(

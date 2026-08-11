@@ -4,7 +4,10 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from .constants import ROLE_MAX_LENGTH, USERNAME_MAX_LENGTH
-from .validators import username_validator, validate_username
+from .validators import (
+    validate_username_characters,
+    validate_username_not_forbidden,
+)
 
 
 class User(AbstractUser):
@@ -21,7 +24,10 @@ class User(AbstractUser):
         'Имя пользователя',
         max_length=USERNAME_MAX_LENGTH,
         unique=True,
-        validators=(username_validator, validate_username),
+        validators=(
+            validate_username_characters,
+            validate_username_not_forbidden,
+        ),
     )
     email = models.EmailField(
         'Адрес электронной почты',
